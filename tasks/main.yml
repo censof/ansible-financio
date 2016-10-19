@@ -1,0 +1,126 @@
+---
+# tasks file for financio-installer/
+
+- name: Set Timezone variable
+  copy: content='Asia/Kuala Lumpur'
+        dest=/etc/timezone
+        owner=root
+        group=root
+        mode=0644
+        backup=yes
+  notify: update timezone
+
+- name: Install NTP
+  apt: pkg=ntp state=installed update_cache=yes
+ 
+- name: Install financio Prerequisites
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+    - sudo
+    - git
+    - apache2
+#   - php5-dev
+#   - php5-mysql
+    - gcc
+    - libpcre3-dev
+    - curl
+    - openssh-server
+    - ca-certificates
+    - postfix
+
+- name: Add repo to for PHP5
+  apt_repository: repo='ppa:ondrej/php'
+
+- name: Run apt-update as saperate step due to adding repo
+  apt: update_cache=yes
+
+- name: Install PHP5 
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+#      - php7.0
+      - php5
+      - php5-mcrypt
+      - php5-mysql
+      - php5-curl
+      - php5-gd
+      - php5-imagick
+      - php5-dev
+      - libapache2-mod-php5
+
+
+- name: Install MySQL
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+    - mysql-server
+#    - php-mysql
+  notify: start Mysql service
+
+#- name: Run mysql_secure_installation(delete ananoymous MYsql server)
+#  mysql_user: login_user=root
+#              login_password={{ mysql_root }}
+#              check_implicit_admin=yes
+#              user=""
+#              host={{ item }}
+#              state=absent
+
+# with_items:
+#     - ""
+#     - "{{ ansible_nodename }}"
+#     - localhost
+
+#- name: Change root user password on first run
+#  mysql_user: login_user=root
+#              login_password="{{ mysql_root }}"
+#              check_implicit_admin=yes
+#              name=root
+#              password={{ mysql_root }}
+#              priv=*.*:ALL,GRANT
+#              host={{ item }}
+#  with_items:
+#      - "{{ ansible_nodename }}"
+#      - 127.0.0.1
+#      - ::1
+#      - localhost
+
+#- name: remove the MySql test database
+#  action: mysql_db login_user=root login_password="{{ mysql_root }}" db=test state=absent
+
+#  command: mysql_secure_installation
+
+#- name: Run mysql_install_db
+#  command: mysql_install_db
+
+
+
+#- name: Install PHP5
+
+#- name: Install Phalcon
+#  unarchive: src=https://github.com/phalcon/cphalcon/archive/phalcon-v2.0.13.zip
+#             creates=/opt/phalcon
+#             dest=/opt/phalcon
+
+#- name: change dir in Phalcon
+#  command: chdir=/opt/phalcon/build
+
+- name: Checkout Phalcon 2.0.13
+  git: repo=https://github.com/norjuliana/cphalcon.git
+       dest=/opt/phalcon
+       version=phalcon-v2.0.13
+
+- name: Install phalcon
+  action: command {{ item }} chdir=/opt/phalcon/build
+  with_items:
+     - ./install
+  when: "'enable' not in '{{ current_phalcon_extension.stdout }}'" 
+
+- name: add extension=phalcon.so in php.ini
+  template: src=/templates/php.ini dest=/etc/php5/apache2/php.ini
+  notify: restart apache2 service
+
+
+
+
+
+  
+       
+ 

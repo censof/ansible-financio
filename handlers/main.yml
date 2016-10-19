@@ -1,0 +1,10 @@
+---
+# handlers file for financio-installer/
+- name: update timezone
+  command: dpkg-reconfigure --frontend noninteractive tzdata
+ 
+- name: start Mysql service
+  service: name=mysql state=started 
+
+- name: restart apache2 service
+  service: name=apache2 state=restarted
