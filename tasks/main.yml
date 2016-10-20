@@ -46,6 +46,7 @@
       - php5-imagick
       - php5-dev
       - libapache2-mod-php5
+      - php5-cli
 
 
 - name: Install MySQL
@@ -106,16 +107,69 @@
   git: repo=https://github.com/norjuliana/cphalcon.git
        dest=/opt/phalcon
        version=phalcon-v2.0.13
+       accept_hostkey=yes
+       force=yes
 
 - name: Install phalcon
   action: command {{ item }} chdir=/opt/phalcon/build
   with_items:
      - ./install
-  when: "'enable' not in '{{ current_phalcon_extension.stdout }}'" 
+#  when: "'enable' not in '{{ current_phalcon_extension.stdout }}'" 
 
 - name: add extension=phalcon.so in php.ini
-  template: src=/templates/php.ini dest=/etc/php5/apache2/php.ini
-  notify: restart apache2 service
+  template: src=templates/php.ini dest=/etc/php5/apache2/php.ini
+#  notify: restart apache2 service
+
+- name: Install Postfix
+  apt: package=postfix state=present update-cache=yes
+
+#Install composer
+- name: download composer
+  get_url: 
+        url=https://getcomposer.org/installer
+        dest=~/composer-setup.php
+
+- name: install composer
+  command: php composer-setup.php
+
+- name: move composer.phar
+  command: mv /composer.phar /usr/local/bin/composer
+
+#Install NodeJS(4.x LTS)
+- name: Add ppa for updated version of NodeJS (4.x LTS)
+  command: curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
+
+- name: Install NodeJS
+  apt: package=nodejs state=installed update-cache=yes
+
+#Install GruntJS
+- name: Install gruntJS -Task Runner
+  command: npm install --g grunt-cli
+
+#Install Bower -Js package manager
+- name: Install Bower
+  command: npm install --g bower
+
+#Install Ruby
+- name: Install Ruby
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+     - ruby
+     - ruby-dev
+
+#Install Compass-CSS Authoring Framework
+- name: Install Compass using Ruby
+  command: gem install compass
+
+
+
+
+
+
+
+ 
+
+
 
 
 
