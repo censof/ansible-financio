@@ -7,7 +7,7 @@ Ansible playbook to install financio
 
 - Miniconda* 
 
-- open SSH connection to remote host  (root access)
+- open SSH connection to remote host 
 
 *installed on host that running ansible script
 
@@ -16,7 +16,7 @@ Ansible playbook to install financio
 
 - Ubuntu 14.04 
 
-######## Adding target remote host ip
+###### Adding target remote host ip
 
 - Add target host ip in hosts file
 
