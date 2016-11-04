@@ -1,0 +1,19 @@
+<VirtualHost *:80>
+# Admin email, Server Name (domain name) and any aliases
+  ServerAdmin jye@financio.co
+  ServerName  git.financio.co
+
+  # Document Root (where the public files are located)
+  DocumentRoot /opt/gitlab/embedded/service/gitlab-rails/public
+
+  # Custom log file locations
+  LogLevel warn
+  # ErrorLog  /home/git/gitlab/log/error.log
+  # CustomLog /home/git/gitlab/log/access.log combined
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+  # Passthrough
+  ProxyPass / http://localhost:8080/
+  ProxyPassReverse / http://localhost:8080/
+</VirtualHost>

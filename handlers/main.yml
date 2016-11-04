@@ -1,5 +1,8 @@
 ---
 # handlers file for financio-installer/
+- name: Restart ssh
+  service: name=ssh state=restarted
+
 - name: update timezone
   command: dpkg-reconfigure --frontend noninteractive tzdata
  
@@ -8,3 +11,6 @@
 
 - name: restart apache2 service
   service: name=apache2 state=restarted
+
+- name: restart postfix
+  service: name=postfix state=restarted

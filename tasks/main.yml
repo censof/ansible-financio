@@ -1,6 +1,34 @@
 ---
 # tasks file for financio-installer/
 
+#Server hardening
+- name: Server harderning
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp=''
+              insertafter=EOF
+              line='{{ hardening_line }}'
+#      notify: Restart ssh
+
+- name: Restart ssh service
+  service: name=ssh state=restarted
+
+#Create a swap file
+- name : Create the file to be used for swap
+  command: sudo fallocate -l 4G /swapfile
+
+- name: Give rights tocreated file
+  command: sudo chmod 0600 /swapfile
+
+- name: Make a swap
+  command: sudo mkswap /swapfile
+
+- name: Swapon
+  command: sudo swapon /swapfile
+
+- name: echo the status
+  command: sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
+ 
+#Update time zone to UTC+8 Malaysia
 - name: Set Timezone variable
   copy: content='Asia/Kuala Lumpur'
         dest=/etc/timezone
@@ -10,23 +38,25 @@
         backup=yes
   notify: update timezone
 
-- name: Install NTP
-  apt: pkg=ntp state=installed update_cache=yes
+#- name: Install NTP
+#  apt: pkg=ntp state=installed update_cache=yes
  
 - name: Install financio Prerequisites
   apt: name={{ item }} state=present update_cache=yes
   with_items:
     - sudo
+    - ntp
     - git
     - apache2
-#   - php5-dev
-#   - php5-mysql
+#    - debconf
+#    - debconf-utils
     - gcc
     - libpcre3-dev
     - curl
     - openssh-server
     - ca-certificates
     - postfix
+    - mailutils
 
 - name: Add repo to for PHP5
   apt_repository: repo='ppa:ondrej/php'
@@ -46,6 +76,7 @@
       - php5-imagick
       - php5-dev
       - libapache2-mod-php5
+      - php5-cli
 
 
 - name: Install MySQL
@@ -90,37 +121,140 @@
 #- name: Run mysql_install_db
 #  command: mysql_install_db
 
+#- name: Set postfix option as Internet site
+#  defcon: 
+#        name=postfix 
+#        question="postfix/main_mailer_type" 
+#        value="'Internet Site'" 
+#        vtype="string"
 
+#- name: Set postfix hostname
+#  defcon:
+#        name=postfix
+#        question="postfix/mailname"
+#        value="{{ ansible_fqdn }}" 
+#        vtype=string
 
-#- name: Install PHP5
+#- name: Install Postfix and mailutils
+#  apt: name={{ item }} state=present update_cache=yes
+#  with_items:
+#      -postfix
+#       mailutils
 
-#- name: Install Phalcon
-#  unarchive: src=https://github.com/phalcon/cphalcon/archive/phalcon-v2.0.13.zip
-#             creates=/opt/phalcon
-#             dest=/opt/phalcon
+- name: Add etc/postfix/main.cf 
+  template: src=/templates/main.cf dest=/etc/postfix/main.cf
+  notify: restart postfix
 
-#- name: change dir in Phalcon
-#  command: chdir=/opt/phalcon/build
+- name: Add apache2.conf
+  template: src=/templates/apache2.conf dest=/etc/apache2/apache2.conf
+  notify: restart apache2 service
+
+- name: Update envvars in /etc/apache2/envvars
+  template: src=/templates/envvars dest=/etc/apache2/envvars
+  notify: restart apache2 service
+
+- name: Add financio.co.conf
+  template: src=/templates/financio.co.conf dest=/etc/apache2/sites-available/financio.co.conf
 
 - name: Checkout Phalcon 2.0.13
   git: repo=https://github.com/norjuliana/cphalcon.git
        dest=/opt/phalcon
        version=phalcon-v2.0.13
+       accept_hostkey=yes
+       force=yes
 
 - name: Install phalcon
   action: command {{ item }} chdir=/opt/phalcon/build
   with_items:
      - ./install
-  when: "'enable' not in '{{ current_phalcon_extension.stdout }}'" 
+#  when: "'enable' not in '{{ current_phalcon_extension.stdout }}'" 
 
 - name: add extension=phalcon.so in php.ini
-  template: src=/templates/php.ini dest=/etc/php5/apache2/php.ini
+  template: src=templates/php.ini dest=/etc/php5/apache2/php.ini
+#  notify: restart apache2 service
+
+- name: Install Postfix
+  apt: package=postfix state=present update-cache=yes
+
+#Install composer
+#- composer: command=install 
+#            working_dir=~/
+#            ignore_platform_reqs=yes
+            
+- name: download composer
+  get_url: 
+        url=https://getcomposer.org/installer
+        dest=~/composer-setup.php
+
+- name: install composer
+  command: php composer-setup.php
+
+- name: move composer.phar
+  command: mv ~/composer.phar /usr/local/bin/composer
+
+#Install NodeJS(4.x LTS)
+- name: Add ppa for updated version of NodeJS (4.x LTS)
+  shell: curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
+
+- name: Install NodeJS
+  apt: package=nodejs state=installed update-cache=yes
+
+#Install GruntJS
+- name: Install gruntJS -Task Runner
+  command: npm install --g grunt-cli
+
+#Install Bower -Js package manager
+- name: Install Bower
+  command: npm install --g bower
+
+#Install Ruby
+- name: Install Ruby
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+     - ruby
+     - ruby-dev
+
+#Install Compass-CSS Authoring Framework
+- name: Install Compass using Ruby
+  command: gem install compass
+
+- name: Install gitlab-ce
+  shell: curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash 
+
+- name: install Gitlab-ce
+  apt: name=gitlab-ce state=present update_cache=yes
+
+- name: Copy over template gitlab.rb
+  template: src=templates/gitlab.rb dest=/etc/gitlab/gitlab.rb
+
+- name: Run gitlab-ctl reconfigure
+  command: sudo gitlab-ctl reconfigure
+
+- name: Restart gitlab-ctl
+  command: sudo gitlab-ctl restart
+
+- name: add gitlab in /etc/apache2/site-avaiable
+  template: src=templates/gitlab dest=etc/apache2/sites-available/gitlab.conf
   notify: restart apache2 service
 
+#- name: Checkout Financio API
+#  git:  
+#     repo=git@gitlab.financio.co:norjuliana/financio-api.git
+#     dest=~/financio-api
+#     accept_hostkeys=yes
+#     force=yes
 
+#- name: Create folders for financio API
+#  file: path=~/financio-api/{{ item }}
+#  with_items:
+#     - private
+#     - backup
+#     - log
+#     - logs
 
+#- name: run migration
 
 
   
-       
- 
+     
+  
