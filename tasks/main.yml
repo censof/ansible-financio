@@ -12,21 +12,21 @@
 - name: Restart ssh service
   service: name=ssh state=restarted
 
-#Create a swap file
-#- name : Create the file to be used for swap
-#  command: sudo fallocate -l 4G /swapfile
+Create a swap file
+- name : Create the file to be used for swap
+  command: sudo fallocate -l 4G /swapfile
 
-#- name: Give rights tocreated file
-#  command: sudo chmod 0600 /swapfile
+- name: Give rights tocreated file
+  command: sudo chmod 0600 /swapfile
 
-#- name: Make a swap
-#  command: sudo mkswap /swapfile
+- name: Make a swap
+  command: sudo mkswap /swapfile
 
-#- name: Swapon
-#  command: sudo swapon /swapfile
+- name: Swapon
+  command: sudo swapon /swapfile
 
-#- name: echo the status
-#  command: sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
+- name: echo the status
+  command: sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
  
 #Update time zone to UTC+8 Malaysia
 - name: Set Timezone variable
@@ -86,61 +86,6 @@
 #    - php-mysql
   notify: start Mysql service
 
-#- name: Run mysql_secure_installation(delete ananoymous MYsql server)
-#  mysql_user: login_user=root
-#              login_password={{ mysql_root }}
-#              check_implicit_admin=yes
-#              user=""
-#              host={{ item }}
-#              state=absent
-
-# with_items:
-#     - ""
-#     - "{{ ansible_nodename }}"
-#     - localhost
-
-#- name: Change root user password on first run
-#  mysql_user: login_user=root
-#              login_password="{{ mysql_root }}"
-#              check_implicit_admin=yes
-#              name=root
-#              password={{ mysql_root }}
-#              priv=*.*:ALL,GRANT
-#              host={{ item }}
-#  with_items:
-#      - "{{ ansible_nodename }}"
-#      - 127.0.0.1
-#      - ::1
-#      - localhost
-
-#- name: remove the MySql test database
-#  action: mysql_db login_user=root login_password="{{ mysql_root }}" db=test state=absent
-
-#  command: mysql_secure_installation
-
-#- name: Run mysql_install_db
-#  command: mysql_install_db
-
-#- name: Set postfix option as Internet site
-#  defcon: 
-#        name=postfix 
-#        question="postfix/main_mailer_type" 
-#        value="'Internet Site'" 
-#        vtype="string"
-
-#- name: Set postfix hostname
-#  defcon:
-#        name=postfix
-#        question="postfix/mailname"
-#        value="{{ ansible_fqdn }}" 
-#        vtype=string
-
-#- name: Install Postfix and mailutils
-#  apt: name={{ item }} state=present update_cache=yes
-#  with_items:
-#      -postfix
-#       mailutils
-
 - name: Add etc/postfix/main.cf 
   template: src=templates/main.cf dest=/etc/postfix/main.cf
   notify: restart postfix
@@ -149,9 +94,9 @@
   template: src=templates/apache2.conf dest=/etc/apache2/apache2.conf
   notify: restart apache2 service
 
-- name: Update envvars in /etc/apache2/envvars
-  template: src=templates/envvars dest=/etc/apache2/envvars
-  notify: restart apache2 service
+#- name: Update envvars in /etc/apache2/envvars
+#  template: src=templates/envvars dest=/etc/apache2/envvars 
+#  notify: restart apache2 service
 
 - name: Add financio.co.conf
   template: src=templates/financio.co.conf dest=/etc/apache2/sites-available/financio.co.conf
@@ -175,12 +120,7 @@
 
 - name: Install Postfix
   apt: package=postfix state=present update-cache=yes
-
-#Install composer
-#- composer: command=install 
-#            working_dir=~/
-#            ignore_platform_reqs=yes
-            
+           
 - name: download composer
   get_url: 
         url=https://getcomposer.org/installer
@@ -233,28 +173,8 @@
 - name: Restart gitlab-ctl
   command: sudo gitlab-ctl restart
 
-- name: add gitlab in /etc/apache2/site-avaiable
-  template: src=templates/gitlab dest=etc/apache2/sites-available/gitlab.conf
-  notify: restart apache2 service
-
-#- name: Checkout Financio API
-#  git:  
-#     repo=git@gitlab.financio.co:norjuliana/financio-api.git
-#     dest=~/financio-api
-#     accept_hostkeys=yes
-#     force=yes
-
-#- name: Create folders for financio API
-#  file: path=~/financio-api/{{ item }}
-#  with_items:
-#     - private
-#     - backup
-#     - log
-#     - logs
-
-#- name: run migration
-
-
-  
+#- name: add gitlab in /etc/apache2/site-avaiable
+#  copy: src=templates/gitlab dest=etc/apache2/sites-available/gitlab
+#  notify: restart apache2 service 
      
   
