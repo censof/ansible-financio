@@ -13,20 +13,20 @@
   service: name=ssh state=restarted
 
 #Create a swap file
-- name : Create the file to be used for swap
-  command: sudo fallocate -l 4G /swapfile
+#- name : Create the file to be used for swap
+#  command: sudo fallocate -l 4G /swapfile
 
-- name: Give rights tocreated file
-  command: sudo chmod 0600 /swapfile
+#- name: Give rights tocreated file
+#  command: sudo chmod 0600 /swapfile
 
-- name: Make a swap
-  command: sudo mkswap /swapfile
+#- name: Make a swap
+#  command: sudo mkswap /swapfile
 
-- name: Swapon
-  command: sudo swapon /swapfile
+#- name: Swapon
+#  command: sudo swapon /swapfile
 
-- name: echo the status
-  command: sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
+#- name: echo the status
+#  command: sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
  
 #Update time zone to UTC+8 Malaysia
 - name: Set Timezone variable
@@ -142,19 +142,19 @@
 #       mailutils
 
 - name: Add etc/postfix/main.cf 
-  template: src=/templates/main.cf dest=/etc/postfix/main.cf
+  template: src=templates/main.cf dest=/etc/postfix/main.cf
   notify: restart postfix
 
 - name: Add apache2.conf
-  template: src=/templates/apache2.conf dest=/etc/apache2/apache2.conf
+  template: src=templates/apache2.conf dest=/etc/apache2/apache2.conf
   notify: restart apache2 service
 
 - name: Update envvars in /etc/apache2/envvars
-  template: src=/templates/envvars dest=/etc/apache2/envvars
+  template: src=templates/envvars dest=/etc/apache2/envvars
   notify: restart apache2 service
 
 - name: Add financio.co.conf
-  template: src=/templates/financio.co.conf dest=/etc/apache2/sites-available/financio.co.conf
+  template: src=templates/financio.co.conf dest=/etc/apache2/sites-available/financio.co.conf
 
 - name: Checkout Phalcon 2.0.13
   git: repo=https://github.com/norjuliana/cphalcon.git
